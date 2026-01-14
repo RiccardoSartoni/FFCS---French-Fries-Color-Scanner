@@ -3,116 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analizzatore Patate Fritte USDA - Pro Plus</title>
+    <title>FRIES-SCAN Pro+ | USDA Official Report</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        .canvas-container { width: 100%; height: 280px; overflow: hidden; border-radius: 0.75rem; position: relative; background-color: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; }
+        .canvas-container { width: 100%; height: 320px; overflow: hidden; border-radius: 1.5rem; position: relative; background: #0f172a; display: flex; align-items: center; justify-content: center; border: 1px solid #334155; }
         canvas, video { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .pattern-dots { background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 15px 15px; }
-        .usda-sample { transition: all 0.3s ease; border: 2px solid transparent; }
-        .usda-sample.selected { border-color: #f59e0b; transform: scale(1.05); box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.2); }
+        .report-card { background: white; color: #0f172a; border-radius: 2rem; padding: 2rem; border: 4px solid #f59e0b; font-family: sans-serif; }
+        .editable-field { border-bottom: 2px dashed #cbd5e1; padding: 2px 5px; min-width: 120px; display: inline-block; outline: none; font-weight: 800; color: #1e293b; }
+        .editable-field:focus { border-bottom-color: #f59e0b; background: #fffbeb; }
+        @media print { .no-print { display: none; } }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800 p-2 md:p-6">
+<body class="bg-slate-950 min-h-screen text-slate-200 p-4">
 
-    <div class="max-w-[1600px] mx-auto">
-        <header class="mb-4 flex flex-col md:flex-row items-center justify-between bg-white p-3 rounded-2xl shadow-sm border border-slate-100 gap-4">
+    <div class="max-w-[1000px] mx-auto">
+        <header class="no-print mb-6 flex items-center justify-between bg-slate-900/50 p-4 rounded-3xl border border-slate-800">
             <div class="flex items-center gap-3">
-                <div class="bg-amber-500 p-2 rounded-xl shadow-md"><span class="text-xl">🍟</span></div>
-                <div>
-                    <h1 class="text-xl font-black text-slate-900 uppercase">FRIES-SCAN <span class="text-amber-500 italic">Pro+</span></h1>
-                    <p class="text-slate-400 font-bold uppercase text-[8px] tracking-[0.2em]">Delta-E Precision & Live Analysis</p>
-                </div>
+                <span class="text-2xl">🍟</span>
+                <h1 class="text-lg font-black text-white uppercase tracking-tighter">FRIES-SCAN <span class="text-amber-500">PRO</span></h1>
             </div>
-            
             <div class="flex gap-2">
-                <button id="startVideo" class="px-4 py-2 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-blue-700 transition-all">Video Live</button>
-                <button id="downloadPdf" class="px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-emerald-700 transition-all hidden">Scarica Report PDF</button>
+                <button id="startVideo" class="px-5 py-3 bg-amber-500 text-slate-950 font-black text-[10px] uppercase rounded-2xl shadow-lg active:scale-95 transition-transform">Live Camera</button>
+                <button id="captureSnapshot" class="hidden px-5 py-3 bg-white text-slate-950 font-black text-[10px] uppercase rounded-2xl shadow-xl active:scale-95 transition-transform">Analizza Ora</button>
             </div>
         </header>
 
-        <main class="grid grid-cols-1 xl:grid-cols-12 gap-4">
-            <div class="xl:col-span-3 space-y-4">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                    <label id="uploadLabel" class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-amber-50 transition-all">
-                        <p class="text-[10px] font-black uppercase text-slate-400">Carica o Scatta Foto</p>
-                        <input id="imageUpload" type="file" class="hidden" accept="image/*" />
-                    </label>
-
-                    <div id="controls" class="hidden mt-4 space-y-4">
-                        <div>
-                            <div class="flex justify-between text-[9px] font-black uppercase mb-1">
-                                <span>Tolleranza Colore</span>
-                                <span id="hueVal" class="text-amber-700">35°</span>
-                            </div>
-                            <input type="range" id="hueThreshold" min="5" max="60" value="35" class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none accent-amber-500">
-                        </div>
-                        <button id="processBtn" class="w-full py-2 bg-slate-900 text-white text-[10px] font-black uppercase rounded-xl">Analisi Manuale</button>
-                    </div>
-                </div>
-
-                <div id="finalGradeCard" class="hidden bg-slate-900 p-4 rounded-2xl shadow-lg text-center border-b-4 border-amber-500">
-                    <h3 class="text-[8px] font-black uppercase text-slate-500 mb-2">Risultato Delta-E (Lab)</h3>
-                    <div id="gradeBadge" class="inline-block px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-2xl mb-2">--</div>
-                    <p id="gradeDescription" class="text-[10px] text-slate-300 font-bold uppercase tracking-tight">In attesa...</p>
-                </div>
+        <main>
+            <div id="workArea" class="grid grid-cols-1 md:grid-cols-2 gap-4 no-print mb-8">
+                <div class="canvas-container"><video id="videoFeed" autoplay playsinline class="hidden w-full h-full"></video><canvas id="sourceCanvas"></canvas></div>
+                <div class="canvas-container ring-2 ring-amber-500/20"><canvas id="processedCanvas"></canvas></div>
             </div>
 
-            <div class="xl:col-span-6 space-y-4">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 grid grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                        <span class="text-[9px] font-black text-slate-400 uppercase">Input Stream</span>
-                        <div class="canvas-container" id="inputContainer">
-                            <canvas id="sourceCanvas"></canvas>
-                            <video id="videoFeed" autoplay playsinline class="hidden absolute inset-0 w-full h-full object-contain"></video>
+            <div id="finalReport" class="hidden report-card shadow-2xl">
+                <div class="flex justify-between items-center border-b-2 border-slate-100 pb-6 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-black tracking-tighter uppercase text-slate-900">Report Ispezione Qualità</h2>
+                        <p class="text-slate-400 font-bold text-[9px] uppercase tracking-[0.2em]">Classificazione Colore USDA (Munsell Chart)</p>
+                    </div>
+                    <div class="text-right">
+                        <div id="gradeBig" class="bg-slate-900 text-amber-500 w-16 h-16 rounded-2xl flex flex-col items-center justify-center shadow-lg mx-auto">
+                            <span class="text-[8px] font-black text-white uppercase">Grado</span>
+                            <span class="text-3xl font-black leading-none">--</span>
                         </div>
                     </div>
-                    <div class="space-y-2">
-                        <span class="text-[9px] font-black text-amber-500 uppercase">Analisi Delta-E</span>
-                        <div class="canvas-container !bg-slate-950"><canvas id="processedCanvas"></canvas></div>
-                    </div>
                 </div>
-                
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                    <div id="usdaScaleContainer" class="grid grid-cols-6 gap-2"></div>
-                </div>
-            </div>
 
-            <div class="xl:col-span-3">
-                <div id="resultsCard" class="hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                    <h3 class="font-black text-[10px] uppercase text-slate-400 mb-4">Distribuzione Qualità</h3>
-                    <div id="chartContainer" class="space-y-4"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 mb-8">
+                    <div class="flex items-end gap-2"><span class="text-[10px] font-black text-slate-400 uppercase w-20">Fornitore:</span><span contenteditable="true" class="editable-field flex-1 text-sm italic">Inserisci...</span></div>
+                    <div class="flex items-end gap-2"><span class="text-[10px] font-black text-slate-400 uppercase w-20">CU:</span><span contenteditable="true" class="editable-field flex-1 text-sm italic">Inserisci...</span></div>
+                    <div class="flex items-end gap-2"><span class="text-[10px] font-black text-slate-400 uppercase w-20">Varietà:</span><span contenteditable="true" class="editable-field flex-1 text-sm italic">Inserisci...</span></div>
+                    <div class="flex items-end gap-2"><span class="text-[10px] font-black text-slate-400 uppercase w-20">Data/Ora:</span><span id="dateTimeField" class="font-bold text-slate-900 text-sm">--</span></div>
+                </div>
+
+                <div class="rounded-2xl overflow-hidden border border-slate-200 mb-6 bg-slate-50">
+                    <img id="snapshotImg" class="w-full h-auto max-h-[350px] object-contain" />
+                </div>
+
+                <div id="miniChart" class="grid grid-cols-6 gap-2"></div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
+                    <div id="statusField" class="text-[12px] font-black uppercase tracking-[0.1em] px-5 py-2 rounded-xl bg-slate-900 text-white shadow-inner">--</div>
+                    <div class="no-print flex gap-2">
+                        <button onclick="window.print()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Screenshot/PDF</button>
+                        <button onclick="location.reload()" class="px-4 py-2 bg-amber-500 text-slate-950 rounded-xl text-[10px] font-black uppercase">Reset</button>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
-        const { jsPDF } = window.jspdf;
-        // Elementi DOM
-        const imageUpload = document.getElementById('imageUpload');
-        const sourceCanvas = document.getElementById('sourceCanvas');
-        const processedCanvas = document.getElementById('processedCanvas');
-        const videoFeed = document.getElementById('videoFeed');
-        const downloadPdfBtn = document.getElementById('downloadPdf');
+        const video = document.getElementById('videoFeed');
+        const sCanvas = document.getElementById('sourceCanvas');
+        const pCanvas = document.getElementById('processedCanvas');
+        const captureBtn = document.getElementById('captureSnapshot');
         
-        let originalImage = null;
-        let isVideoMode = false;
+        let isLive = false;
+        let animId;
 
-        // 1. Definizioni Standard USDA con coordinate CIELAB per Delta-E
-        // I valori Lab sono approssimazioni scientifiche dei colori USDA
         const USDA_GRADES = [
-            { id: "00", name: "00", rgb: [245, 245, 230], lab: [96, -2, 8] },
-            { id: "0", name: "0", rgb: [240, 230, 180], lab: [91, -4, 25] },
-            { id: "1", name: "1", rgb: [225, 190, 100], lab: [79, 4, 50] },
-            { id: "2", name: "2", rgb: [200, 150, 60], lab: [64, 12, 55] },
-            { id: "3", name: "3", rgb: [160, 100, 40], lab: [47, 18, 45] },
-            { id: "4", name: "4", rgb: [90, 50, 20], lab: [25, 15, 25] }
+            { id: "00", name: "00", desc: "Very Light", lab: [96, -2, 8], color: "#fefce8" },
+            { id: "0", name: "0", desc: "Light", lab: [91, -4, 25], color: "#fef9c3" },
+            { id: "1", name: "1", desc: "Light Brown", lab: [79, 4, 50], color: "#fde68a" },
+            { id: "2", name: "2", desc: "Moderate Brown", lab: [64, 12, 55], color: "#f59e0b" },
+            { id: "3", name: "3", desc: "Dark Brown", lab: [47, 18, 45], color: "#b45309" },
+            { id: "4", name: "4", desc: "Very Dark", lab: [25, 15, 25], color: "#451a03" }
         ];
 
-        // --- FUNZIONI DI CONVERSIONE COLORE AVANZATE ---
-        
         function rgbToLab(r, g, b) {
             r /= 255; g /= 255; b /= 255;
             r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
@@ -128,159 +105,83 @@
             return [(116 * y) - 16, 500 * (x - y), 200 * (y - z)];
         }
 
-        function deltaE(lab1, lab2) {
-            return Math.sqrt(Math.pow(lab1[0]-lab2[0], 2) + Math.pow(lab1[1]-lab2[1], 2) + Math.pow(lab1[2]-lab2[2], 2));
-        }
+        function deltaE(l1, l2) { return Math.sqrt(Math.pow(l1[0]-l2[0],2) + Math.pow(l1[1]-l2[1],2) + Math.pow(l1[2]-l2[2],2)); }
 
-        function rgbToHsv(r, g, b) {
-            r /= 255; g /= 255; b /= 255;
-            const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-            let h, s = max === 0 ? 0 : d / max, v = max;
-            if (max === min) h = 0;
-            else {
-                if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
-                else if (max === g) h = (b - r) / d + 2;
-                else h = (r - g) / d + 4;
-                h /= 6;
-            }
-            return [h * 360, s * 100, v * 100];
-        }
-
-        // --- CORE PROCESSING ---
-
-        function processImage() {
-            const sCtx = sourceCanvas.getContext('2d', { willReadFrequently: true });
-            const pCtx = processedCanvas.getContext('2d');
-            
-            if (isVideoMode) {
-                sCtx.drawImage(videoFeed, 0, 0, sourceCanvas.width, sourceCanvas.height);
-            }
-
-            const imgData = sCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+        function analyze() {
+            const sCtx = sCanvas.getContext('2d');
+            const pCtx = pCanvas.getContext('2d');
+            if(isLive) sCtx.drawImage(video, 0, 0, sCanvas.width, sCanvas.height);
+            const imgData = sCtx.getImageData(0,0, sCanvas.width, sCanvas.height);
             const data = imgData.data;
-            const output = pCtx.createImageData(sourceCanvas.width, sourceCanvas.height);
-            const outData = output.data;
+            const output = pCtx.createImageData(sCanvas.width, sCanvas.height);
+            const counts = { "00":0, "0":0, "1":0, "2":0, "3":0, "4":0 };
+            let total = 0;
 
-            const hThresh = parseInt(document.getElementById('hueThreshold').value);
-            const counts = { "00": 0, "0": 0, "1": 0, "2": 0, "3": 0, "4": 0 };
-            let totalFound = 0;
-
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i], g = data[i+1], b = data[i+2];
-                const [h, s, v] = rgbToHsv(r, g, b);
-
-                // Segmentazione: Filtro HSV per isolare la patata dallo sfondo
-                if (Math.abs(h - 45) < hThresh && s > 15 && v > 20) {
-                    const currentLab = rgbToLab(r, g, b);
-                    let minDelta = Infinity;
-                    let bestGrade = "0";
-
-                    // Comparazione Delta-E con lo standard
-                    USDA_GRADES.forEach(grade => {
-                        const de = deltaE(currentLab, grade.lab);
-                        if (de < minDelta) {
-                            minDelta = de;
-                            bestGrade = grade.id;
-                        }
+            for(let i=0; i<data.length; i+=4) {
+                const r=data[i], g=data[i+1], b=data[i+2];
+                if(r > 80 && r > b) {
+                    const lab = rgbToLab(r,g,b);
+                    let minD = 100, best = "0";
+                    USDA_GRADES.forEach(gr => {
+                        const de = deltaE(lab, gr.lab);
+                        if(de < minD) { minD = de; best = gr.id; }
                     });
-
-                    counts[bestGrade]++;
-                    totalFound++;
-                    outData[i] = r; outData[i+1] = g; outData[i+2] = b; outData[i+3] = 255;
+                    counts[best]++; total++;
+                    output.data[i]=r; output.data[i+1]=g; output.data[i+2]=b; output.data[i+3]=255;
                 } else {
-                    outData[i] = 10; outData[i+1] = 10; outData[i+2] = 15; outData[i+3] = 255;
+                    output.data[i]=15; output.data[i+1]=23; output.data[i+2]=42; output.data[i+3]=255;
                 }
             }
             pCtx.putImageData(output, 0, 0);
-            updateUI(counts, totalFound);
-            if (isVideoMode) requestAnimationFrame(processImage);
+            if(isLive) animId = requestAnimationFrame(analyze);
+            return { counts, total };
         }
-
-        function updateUI(counts, total) {
-            const container = document.getElementById('chartContainer');
-            container.innerHTML = '';
-            let dominant = "1", maxVal = -1;
-
-            USDA_GRADES.forEach(g => {
-                const p = total > 0 ? (counts[g.id] / total * 100) : 0;
-                if (p > maxVal) { maxVal = p; dominant = g.id; }
-                container.innerHTML += `
-                    <div class="text-[9px] font-black flex justify-between mb-1"><span>USDA ${g.name}</span><span>${p.toFixed(1)}%</span></div>
-                    <div class="w-full bg-slate-100 h-2 rounded-full mb-3"><div class="h-full rounded-full" style="width:${p}%; background:rgb(${g.rgb.join(',')})"></div></div>
-                `;
-            });
-
-            document.getElementById('gradeBadge').innerText = `G${dominant}`;
-            document.getElementById('gradeDescription').innerText = dominant < 1 ? "Under-Cooked" : (dominant < 3 ? "Ideal Quality" : "Over-Cooked");
-            document.getElementById('downloadPdf').classList.toggle('hidden', total === 0);
-        }
-
-        // --- VIDEO E PDF ---
 
         document.getElementById('startVideo').onclick = async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                videoFeed.srcObject = stream;
-                videoFeed.classList.remove('hidden');
-                sourceCanvas.classList.add('hidden');
-                isVideoMode = true;
-                
-                // Setta dimensioni
-                setTimeout(() => {
-                    sourceCanvas.width = videoFeed.videoWidth / 2;
-                    sourceCanvas.height = videoFeed.videoHeight / 2;
-                    processedCanvas.width = sourceCanvas.width;
-                    processedCanvas.height = sourceCanvas.height;
-                    processImage();
-                }, 500);
-            } catch (err) { alert("Fotocamera non accessibile"); }
-        };
-
-        downloadPdfBtn.onclick = () => {
-            const doc = new jsPDF();
-            doc.setFontSize(20);
-            doc.text("REPORT QUALITÀ PATATE FRITTE", 20, 20);
-            doc.setFontSize(12);
-            doc.text(`Grado Predominante: USDA ${document.getElementById('gradeBadge').innerText}`, 20, 40);
-            doc.text(`Data Analisi: ${new Date().toLocaleString()}`, 20, 50);
-            
-            // Aggiungi screenshot dell'analisi
-            const imgData = processedCanvas.toDataURL("image/jpeg", 0.8);
-            doc.addImage(imgData, 'JPEG', 20, 60, 100, 75);
-            
-            doc.save("Report_Qualita_SARTech.pdf");
-        };
-
-        // Inizializzazione UI Scale
-        document.getElementById('usdaScaleContainer').innerHTML = USDA_GRADES.map(g => `
-            <div class="p-1 bg-slate-50 rounded border flex flex-col items-center">
-                <div class="w-full aspect-square rounded mb-1" style="background:rgb(${g.rgb.join(',')})"></div>
-                <span class="text-[7px] font-black">G${g.name}</span>
-            </div>
-        `).join('');
-
-        imageUpload.onchange = (e) => {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                originalImage = new Image();
-                originalImage.onload = () => {
-                    isVideoMode = false;
-                    videoFeed.classList.add('hidden');
-                    sourceCanvas.classList.remove('hidden');
-                    sourceCanvas.width = 600; sourceCanvas.height = (originalImage.height / originalImage.width) * 600;
-                    processedCanvas.width = sourceCanvas.width; processedCanvas.height = sourceCanvas.height;
-                    sourceCanvas.getContext('2d').drawImage(originalImage, 0, 0, sourceCanvas.width, sourceCanvas.height);
-                    document.getElementById('controls').classList.remove('hidden');
-                    document.getElementById('resultsCard').classList.remove('hidden');
-                    document.getElementById('finalGradeCard').classList.remove('hidden');
-                    processImage();
-                };
-                originalImage.src = ev.target.result;
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            video.srcObject = stream;
+            video.classList.remove('hidden');
+            sCanvas.classList.add('hidden');
+            isLive = true;
+            captureBtn.classList.remove('hidden');
+            video.onloadedmetadata = () => {
+                sCanvas.width = video.videoWidth/2; sCanvas.height = video.videoHeight/2;
+                pCanvas.width = sCanvas.width; pCanvas.height = sCanvas.height;
+                analyze();
             };
-            reader.readAsDataURL(e.target.files[0]);
         };
 
-        document.getElementById('processBtn').onclick = processImage;
+        captureBtn.onclick = () => {
+            isLive = false;
+            cancelAnimationFrame(animId);
+            const res = analyze();
+            const oraEsatta = new Date().toLocaleString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+            document.getElementById('dateTimeField').innerText = oraEsatta;
+            document.getElementById('finalReport').classList.remove('hidden');
+            document.getElementById('snapshotImg').src = pCanvas.toDataURL();
+            
+            let domID = "1", maxP = -1;
+            const miniChart = document.getElementById('miniChart');
+            miniChart.innerHTML = '';
+
+            USDA_GRADES.forEach(g => {
+                const perc = res.total > 0 ? (res.counts[g.id]/res.total*100) : 0;
+                if(perc > maxP) { maxP = perc; domID = g.id; }
+                miniChart.innerHTML += `
+                    <div class="text-center">
+                        <div class="h-10 bg-slate-100 rounded-t flex items-end overflow-hidden border border-slate-200">
+                            <div style="height:${perc}%; background-color:${g.color}; width:100%"></div>
+                        </div>
+                        <p class="text-[7px] font-black mt-1">G${g.name}</p>
+                    </div>`;
+            });
+
+            const domGrade = USDA_GRADES.find(g => g.id === domID);
+            document.getElementById('gradeBig').querySelector('span:last-child').innerText = domGrade.name;
+            document.getElementById('statusField').innerText = "ESITO USDA: GRADO " + domGrade.name + " (" + domGrade.desc + ")";
+
+            document.getElementById('finalReport').scrollIntoView({ behavior: 'smooth' });
+        };
     </script>
 </body>
 </html>

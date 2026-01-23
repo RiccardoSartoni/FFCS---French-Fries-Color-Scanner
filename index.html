@@ -3,69 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FRIES-SCAN Pro+ | USDA Official Report</title>
+    <title>Analizzatore Patate Fritte USDA - Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .canvas-container { width: 100%; height: 320px; overflow: hidden; border-radius: 1.5rem; position: relative; background: #0f172a; display: flex; align-items: center; justify-content: center; border: 1px solid #334155; }
-        canvas, video { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .report-card { background: white; color: #0f172a; border-radius: 2rem; padding: 2rem; border: 4px solid #f59e0b; font-family: sans-serif; }
-        .editable-field { border-bottom: 2px dashed #cbd5e1; padding: 2px 5px; min-width: 120px; display: inline-block; outline: none; font-weight: 800; color: #1e293b; }
-        .editable-field:focus { border-bottom-color: #f59e0b; background: #fffbeb; }
-        @media print { .no-print { display: none; } }
+        .canvas-container {
+            width: 100%;
+            height: 280px;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            position: relative;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .pattern-dots {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 15px 15px;
+        }
+        .usda-sample {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .usda-sample.selected {
+            border-color: #f59e0b;
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.2);
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            width: 14px;
+            height: 14px;
+            background: #f59e0b;
+            border-radius: 50%;
+            cursor: pointer;
+        }
     </style>
 </head>
-<body class="bg-slate-950 min-h-screen text-slate-200 p-4">
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans p-2 md:p-6">
 
-    <div class="max-w-[1000px] mx-auto">
-        <header class="no-print mb-6 flex items-center justify-between bg-slate-900/50 p-4 rounded-3xl border border-slate-800">
+    <div id="main-container" class="max-w-[1600px] mx-auto">
+        <!-- Header con Branding Originale SARTech -->
+        <header class="mb-4 flex flex-col md:flex-row items-center justify-between bg-white p-3 rounded-2xl shadow-sm border border-slate-100 gap-4">
             <div class="flex items-center gap-3">
-                <span class="text-2xl">🍟</span>
-                <h1 class="text-lg font-black text-white uppercase tracking-tighter">FRIES-SCAN <span class="text-amber-500">PRO</span></h1>
+                <div class="bg-amber-500 p-2 rounded-xl shadow-md">
+                    <span class="text-xl">🍟</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black text-slate-900 tracking-tighter leading-none uppercase">FRIES-SCAN <span class="text-amber-500 italic text-lg">Pro</span></h1>
+                    <p class="text-slate-400 font-bold uppercase text-[8px] tracking-[0.2em] mt-1">SISTEMA ANALISI QA IN TEMPO REALE</p>
+                </div>
             </div>
-            <div class="flex gap-2">
-                <button id="startVideo" class="px-5 py-3 bg-amber-500 text-slate-950 font-black text-[10px] uppercase rounded-2xl shadow-lg active:scale-95 transition-transform">Live Camera</button>
-                <button id="captureSnapshot" class="hidden px-5 py-3 bg-white text-slate-950 font-black text-[10px] uppercase rounded-2xl shadow-xl active:scale-95 transition-transform">Analizza Ora</button>
+
+            <!-- Branding SARTech S.r.l. -->
+            <div class="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                <div class="text-right">
+                    <p class="text-slate-900 font-black text-[10px] uppercase tracking-wider leading-none">PIZZOLI</p>
+                    <p class="text-amber-600 font-bold text-[9px] lowercase italic leading-none mt-1">R&D AGRO technology</p>
+                </div>
+                <div class="w-10 h-10 bg-white rounded-lg border border-slate-200 p-1 flex items-center justify-center shadow-inner">
+                    <svg viewBox="0 0 100 100" class="w-full h-full text-amber-700">
+                        <path fill="currentColor" d="M30,50 Q30,20 50,20 Q70,20 70,50 Q70,80 50,80 Q30,80 30,50" />
+                        <rect x="42" y="35" width="16" height="10" rx="2" fill="#334155" />
+                        <circle cx="46" cy="40" r="2" fill="#38bdf8" />
+                        <circle cx="54" cy="40" r="2" fill="#38bdf8" />
+                        <path d="M45,65 L55,65" stroke="#334155" stroke-width="2" />
+                        <path d="M30,40 L20,30 M70,40 L80,30" stroke="#94a3b8" stroke-width="2" />
+                    </svg>
+                </div>
             </div>
         </header>
 
-        <main>
-            <div id="workArea" class="grid grid-cols-1 md:grid-cols-2 gap-4 no-print mb-8">
-                <div class="canvas-container"><video id="videoFeed" autoplay playsinline class="hidden w-full h-full"></video><canvas id="sourceCanvas"></canvas></div>
-                <div class="canvas-container ring-2 ring-amber-500/20"><canvas id="processedCanvas"></canvas></div>
+        <main class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+            <!-- Sidebar Sinistra: Caricamento e Controlli -->
+            <div class="xl:col-span-3 space-y-4">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <label class="block mb-4">
+                        <label for="imageUpload" class="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-100 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-amber-50 transition-all group">
+                            <div class="flex flex-col items-center justify-center text-slate-400">
+                                <svg class="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <p class="text-[10px] font-black uppercase tracking-widest text-center px-2">Scatta Foto o Carica</p>
+                            </div>
+                            <!-- capture="environment" suggerisce l'uso della fotocamera posteriore su dispositivi mobili -->
+                            <input id="imageUpload" type="file" class="hidden" accept="image/*" capture="environment" />
+                        </label>
+                    </label>
+
+                    <div id="controls" class="hidden space-y-4">
+                        <h3 class="font-black text-[10px] uppercase tracking-widest text-slate-400 border-b pb-2">Parametri di Filtro</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between mb-1 text-[9px] font-black">
+                                    <label class="uppercase text-slate-500">Tolleranza Hue (Colore)</label>
+                                    <span id="hueVal" class="text-amber-700">35°</span>
+                                </div>
+                                <input type="range" id="hueThreshold" min="5" max="60" value="35" class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1 text-[9px] font-black">
+                                    <label class="uppercase text-slate-500">Saturazione Minima</label>
+                                    <span id="satVal" class="text-amber-700">15%</span>
+                                </div>
+                                <input type="range" id="satThreshold" min="5" max="50" value="15" class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                            </div>
+                        </div>
+                        <button id="processBtn" class="w-full py-2 bg-slate-900 hover:bg-black text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-md">
+                            Rielabora Analisi
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card del Verdetto -->
+                <div id="finalGradeCard" class="hidden bg-slate-900 p-4 rounded-2xl shadow-lg text-center border-b-4 border-amber-500">
+                    <h3 class="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-2">Classificazione USDA</h3>
+                    <div id="gradeBadge" class="inline-block px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-2xl mb-2">--</div>
+                    <p id="gradeDescription" class="text-[10px] text-slate-300 leading-tight italic uppercase font-bold tracking-tight">In attesa...</p>
+                </div>
             </div>
 
-            <div id="finalReport" class="hidden report-card shadow-2xl">
-                <div class="flex justify-between items-center border-b-2 border-slate-100 pb-6 mb-6">
-                    <div>
-                        <h2 class="text-2xl font-black tracking-tighter uppercase text-slate-900">Report Ispezione Qualità</h2>
-                        <p class="text-slate-400 font-bold text-[9px] uppercase tracking-[0.2em]">Classificazione Colore USDA (Munsell Chart)</p>
+            <!-- Centro: Area Visuale -->
+            <div class="xl:col-span-6 space-y-4">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sorgente Originale</span>
+                        <div class="canvas-container"><canvas id="sourceCanvas"></canvas></div>
                     </div>
-                    <div class="text-right">
-                        <div id="gradeBig" class="bg-slate-900 text-amber-500 w-16 h-16 rounded-2xl flex flex-col items-center justify-center shadow-lg mx-auto">
-                            <span class="text-[8px] font-black text-white uppercase">Grado</span>
-                            <span class="text-3xl font-black leading-none">--</span>
+                    <div class="space-y-2">
+                        <span class="text-[9px] font-black text-amber-500 uppercase tracking-widest">Mappatura Digitale</span>
+                        <div class="canvas-container pattern-dots !bg-slate-950"><canvas id="processedCanvas"></canvas></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <h2 class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3 text-center">Standard di Riferimento USDA</h2>
+                    <div id="usdaScaleContainer" class="grid grid-cols-6 gap-2"></div>
+                </div>
+            </div>
+
+            <!-- Sidebar Destra: Dettagli Analisi -->
+            <div class="xl:col-span-3 space-y-4">
+                <div id="resultsCard" class="hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-100 h-fit">
+                    <div class="flex justify-between items-center border-b pb-2 mb-4">
+                        <h3 class="font-black text-[10px] uppercase tracking-widest text-slate-400">Distribuzione (Relativa al 100%)</h3>
+                    </div>
+                    
+                    <div id="chartContainer" class="space-y-5"></div>
+                    
+                    <div class="mt-6 pt-4 border-t border-slate-50 bg-slate-50/50 p-3 rounded-xl">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Massa Pixel Analizzati</span>
+                            <span id="totalPixels" class="text-slate-900 font-mono text-xs font-bold bg-white px-2 py-0.5 rounded border border-slate-100 shadow-sm">0 px</span>
                         </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 mb-8">
-                    <div class="flex items-end gap-2"><span class="text-[10px] font-black text-slate-400 uppercase w-20">Fornitore:</span><span contenteditable="true" class="editable-field flex-1 text-sm italic">Inserisci...</span></div>
-                    <div class="flex items-end gap-2"><span class="text-[10px] font-black text-slate-400 uppercase w-20">CU:</span><span contenteditable="true" class="editable-field flex-1 text-sm italic">Inserisci...</span></div>
-                    <div class="flex items-end gap-2"><span class="text-[10px] font-black text-slate-400 uppercase w-20">Varietà:</span><span contenteditable="true" class="editable-field flex-1 text-sm italic">Inserisci...</span></div>
-                    <div class="flex items-end gap-2"><span class="text-[10px] font-black text-slate-400 uppercase w-20">Data/Ora:</span><span id="dateTimeField" class="font-bold text-slate-900 text-sm">--</span></div>
-                </div>
-
-                <div class="rounded-2xl overflow-hidden border border-slate-200 mb-6 bg-slate-50">
-                    <img id="snapshotImg" class="w-full h-auto max-h-[350px] object-contain" />
-                </div>
-
-                <div id="miniChart" class="grid grid-cols-6 gap-2"></div>
-
-                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
-                    <div id="statusField" class="text-[12px] font-black uppercase tracking-[0.1em] px-5 py-2 rounded-xl bg-slate-900 text-white shadow-inner">--</div>
-                    <div class="no-print flex gap-2">
-                        <button onclick="window.print()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Screenshot/PDF</button>
-                        <button onclick="location.reload()" class="px-4 py-2 bg-amber-500 text-slate-950 rounded-xl text-[10px] font-black uppercase">Reset</button>
+                        <p class="text-[8px] text-slate-400 italic leading-none mt-2">Nota: I valori dell'istogramma sono calcolati esclusivamente sui pixel filtrati.</p>
                     </div>
                 </div>
             </div>
@@ -73,115 +167,152 @@
     </div>
 
     <script>
-        const video = document.getElementById('videoFeed');
-        const sCanvas = document.getElementById('sourceCanvas');
-        const pCanvas = document.getElementById('processedCanvas');
-        const captureBtn = document.getElementById('captureSnapshot');
-        
-        let isLive = false;
-        let animId;
+        const imageUpload = document.getElementById('imageUpload');
+        const sourceCanvas = document.getElementById('sourceCanvas');
+        const processedCanvas = document.getElementById('processedCanvas');
+        const hueThreshold = document.getElementById('hueThreshold');
+        const satThreshold = document.getElementById('satThreshold');
+        const processBtn = document.getElementById('processBtn');
+        const chartContainer = document.getElementById('chartContainer');
+        const gradeBadge = document.getElementById('gradeBadge');
+        const gradeDescription = document.getElementById('gradeDescription');
+        const totalPixelsLabel = document.getElementById('totalPixels');
+
+        let originalImage = null;
 
         const USDA_GRADES = [
-            { id: "00", name: "00", desc: "Very Light", lab: [96, -2, 8], color: "#fefce8" },
-            { id: "0", name: "0", desc: "Light", lab: [91, -4, 25], color: "#fef9c3" },
-            { id: "1", name: "1", desc: "Light Brown", lab: [79, 4, 50], color: "#fde68a" },
-            { id: "2", name: "2", desc: "Moderate Brown", lab: [64, 12, 55], color: "#f59e0b" },
-            { id: "3", name: "3", desc: "Dark Brown", lab: [47, 18, 45], color: "#b45309" },
-            { id: "4", name: "4", desc: "Very Dark", lab: [25, 15, 25], color: "#451a03" }
+            { id: "00", name: "00", rgb: [245, 245, 230], color: "#f5f5e6" },
+            { id: "0", name: "0", rgb: [240, 230, 180], color: "#f0e6b4" },
+            { id: "1", name: "1", rgb: [225, 190, 100], color: "#e1be64" },
+            { id: "2", name: "2", rgb: [200, 150, 60], color: "#c8963c" },
+            { id: "3", name: "3", rgb: [160, 100, 40], color: "#a06428" },
+            { id: "4", name: "4", rgb: [90, 50, 20], color: "#5a3214" }
         ];
 
-        function rgbToLab(r, g, b) {
+        function rgbToHsv(r, g, b) {
             r /= 255; g /= 255; b /= 255;
-            r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-            g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-            b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
-            let x = (r * 0.4124 + g * 0.3576 + b * 0.1805) * 100;
-            let y = (r * 0.2126 + g * 0.7152 + b * 0.0722) * 100;
-            let z = (r * 0.0193 + g * 0.1192 + b * 0.9505) * 100;
-            x /= 95.047; y /= 100.000; z /= 108.883;
-            x = x > 0.008856 ? Math.pow(x, 1/3) : (7.787 * x) + (16/116);
-            y = y > 0.008856 ? Math.pow(y, 1/3) : (7.787 * y) + (16/116);
-            z = z > 0.008856 ? Math.pow(z, 1/3) : (7.787 * z) + (16/116);
-            return [(116 * y) - 16, 500 * (x - y), 200 * (y - z)];
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, v = max;
+            const d = max - min;
+            s = max === 0 ? 0 : d / max;
+            if (max === min) h = 0;
+            else {
+                if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+                else if (max === g) h = (b - r) / d + 2;
+                else h = (r - g) / d + 4;
+                h /= 6;
+            }
+            return [h * 360, s * 100, v * 100];
         }
 
-        function deltaE(l1, l2) { return Math.sqrt(Math.pow(l1[0]-l2[0],2) + Math.pow(l1[1]-l2[1],2) + Math.pow(l1[2]-l2[2],2)); }
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    initCanvases();
+                    processImage();
+                    document.getElementById('controls').classList.remove('hidden');
+                    document.getElementById('resultsCard').classList.remove('hidden');
+                    document.getElementById('finalGradeCard').classList.remove('hidden');
+                };
+                originalImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
 
-        function analyze() {
-            const sCtx = sCanvas.getContext('2d');
-            const pCtx = pCanvas.getContext('2d');
-            if(isLive) sCtx.drawImage(video, 0, 0, sCanvas.width, sCanvas.height);
-            const imgData = sCtx.getImageData(0,0, sCanvas.width, sCanvas.height);
-            const data = imgData.data;
-            const output = pCtx.createImageData(sCanvas.width, sCanvas.height);
-            const counts = { "00":0, "0":0, "1":0, "2":0, "3":0, "4":0 };
-            let total = 0;
+        function initCanvases() {
+            const scale = Math.min(1, 1200 / originalImage.width);
+            sourceCanvas.width = originalImage.width * scale;
+            sourceCanvas.height = originalImage.height * scale;
+            processedCanvas.width = sourceCanvas.width;
+            processedCanvas.height = sourceCanvas.height;
+            sourceCanvas.getContext('2d', { willReadFrequently: true }).drawImage(originalImage, 0, 0, sourceCanvas.width, sourceCanvas.height);
+        }
 
-            for(let i=0; i<data.length; i+=4) {
-                const r=data[i], g=data[i+1], b=data[i+2];
-                if(r > 80 && r > b) {
-                    const lab = rgbToLab(r,g,b);
-                    let minD = 100, best = "0";
+        function processImage() {
+            if (!originalImage) return;
+            const sCtx = sourceCanvas.getContext('2d', { willReadFrequently: true });
+            const pCtx = processedCanvas.getContext('2d');
+            const imageData = sCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+            const data = imageData.data;
+            const pData = pCtx.createImageData(sourceCanvas.width, sourceCanvas.height);
+            
+            let totalFound = 0;
+            const counts = { "00": 0, "0": 0, "1": 0, "2": 0, "3": 0, "4": 0 };
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i], g = data[i+1], b = data[i+2];
+                const [h, s, v] = rgbToHsv(r, g, b);
+                
+                if (Math.abs(h - 45) < parseInt(hueThreshold.value) && s > parseInt(satThreshold.value) && v > 20) {
+                    pData.data[i] = r; pData.data[i+1] = g; pData.data[i+2] = b; pData.data[i+3] = 255;
+                    totalFound++;
+                    let minD = Infinity, best = "0";
                     USDA_GRADES.forEach(gr => {
-                        const de = deltaE(lab, gr.lab);
-                        if(de < minD) { minD = de; best = gr.id; }
+                        const d = Math.sqrt((r-gr.rgb[0])**2 + (g-gr.rgb[1])**2 + (b-gr.rgb[2])**2);
+                        if (d < minD) { minD = d; best = gr.id; }
                     });
-                    counts[best]++; total++;
-                    output.data[i]=r; output.data[i+1]=g; output.data[i+2]=b; output.data[i+3]=255;
+                    counts[best]++;
                 } else {
-                    output.data[i]=15; output.data[i+1]=23; output.data[i+2]=42; output.data[i+3]=255;
+                    pData.data[i] = 15; pData.data[i+1] = 15; pData.data[i+2] = 20; pData.data[i+3] = 255;
                 }
             }
-            pCtx.putImageData(output, 0, 0);
-            if(isLive) animId = requestAnimationFrame(analyze);
-            return { counts, total };
+            pCtx.putImageData(pData, 0, 0);
+            updateUI(counts, totalFound);
         }
 
-        document.getElementById('startVideo').onclick = async () => {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            video.srcObject = stream;
-            video.classList.remove('hidden');
-            sCanvas.classList.add('hidden');
-            isLive = true;
-            captureBtn.classList.remove('hidden');
-            video.onloadedmetadata = () => {
-                sCanvas.width = video.videoWidth/2; sCanvas.height = video.videoHeight/2;
-                pCanvas.width = sCanvas.width; pCanvas.height = sCanvas.height;
-                analyze();
-            };
-        };
-
-        captureBtn.onclick = () => {
-            isLive = false;
-            cancelAnimationFrame(animId);
-            const res = analyze();
-            const oraEsatta = new Date().toLocaleString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
-            document.getElementById('dateTimeField').innerText = oraEsatta;
-            document.getElementById('finalReport').classList.remove('hidden');
-            document.getElementById('snapshotImg').src = pCanvas.toDataURL();
+        function updateUI(counts, total) {
+            chartContainer.innerHTML = '';
+            totalPixelsLabel.innerText = total.toLocaleString() + ' px';
             
-            let domID = "1", maxP = -1;
-            const miniChart = document.getElementById('miniChart');
-            miniChart.innerHTML = '';
-
-            USDA_GRADES.forEach(g => {
-                const perc = res.total > 0 ? (res.counts[g.id]/res.total*100) : 0;
-                if(perc > maxP) { maxP = perc; domID = g.id; }
-                miniChart.innerHTML += `
-                    <div class="text-center">
-                        <div class="h-10 bg-slate-100 rounded-t flex items-end overflow-hidden border border-slate-200">
-                            <div style="height:${perc}%; background-color:${g.color}; width:100%"></div>
+            let dominant = "1", maxP = -1;
+            
+            USDA_GRADES.forEach(grade => {
+                const p = total > 0 ? (counts[grade.id] / total * 100) : 0;
+                if (p > maxP) { maxP = p; dominant = grade.id; }
+                
+                chartContainer.innerHTML += `
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-end">
+                            <span class="text-[10px] font-black text-slate-700 uppercase leading-none">USDA ${grade.name}</span>
+                            <div class="flex items-baseline gap-1">
+                                <span class="text-xs font-black text-slate-900 font-mono">${p.toFixed(1)}</span>
+                                <span class="text-[8px] font-bold text-slate-400">%</span>
+                            </div>
                         </div>
-                        <p class="text-[7px] font-black mt-1">G${g.name}</p>
+                        <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden flex border border-slate-50 shadow-inner">
+                            <div class="h-full transition-all duration-700 ease-out relative group" style="width:${p}%; background:${grade.color}">
+                                <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            </div>
+                        </div>
                     </div>`;
             });
 
-            const domGrade = USDA_GRADES.find(g => g.id === domID);
-            document.getElementById('gradeBig').querySelector('span:last-child').innerText = domGrade.name;
-            document.getElementById('statusField').innerText = "ESITO USDA: GRADO " + domGrade.name + " (" + domGrade.desc + ")";
+            document.querySelectorAll('.usda-sample').forEach(el => el.classList.remove('selected'));
+            const selectedSample = document.getElementById(`sample-${dominant}`);
+            if (selectedSample) selectedSample.classList.add('selected');
 
-            document.getElementById('finalReport').scrollIntoView({ behavior: 'smooth' });
+            gradeBadge.innerText = `USDA ${dominant}`;
+            gradeDescription.innerText = dominant < 1 ? "Cottura Insufficiente" : (dominant < 3 ? "Qualità Ottimale" : "Cottura Eccessiva");
+        }
+
+        hueThreshold.oninput = () => {
+            document.getElementById('hueVal').innerText = hueThreshold.value + '°';
         };
+        satThreshold.oninput = () => {
+            document.getElementById('satVal').innerText = satThreshold.value + '%';
+        };
+        processBtn.onclick = processImage;
+
+        document.getElementById('usdaScaleContainer').innerHTML = USDA_GRADES.map(g => `
+            <div id="sample-${g.id}" class="usda-sample p-2 bg-white border border-slate-50 rounded-xl flex flex-col items-center">
+                <div class="w-full aspect-square rounded-lg mb-1 shadow-sm border border-slate-100" style="background:${g.color}"></div>
+                <span class="text-[8px] font-black text-slate-400">G${g.name}</span>
+            </div>
+        `).join('');
     </script>
 </body>
 </html>

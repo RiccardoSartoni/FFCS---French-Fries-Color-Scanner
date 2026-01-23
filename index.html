@@ -2,13 +2,18 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Analizzatore Patate Fritte USDA - Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Touch friendly optimizations */
+        body {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
         .canvas-container {
             width: 100%;
-            height: 280px;
+            height: 220px; /* Ridotto per mobile per mostrare entrambi i canvas nello schermo */
             overflow: hidden;
             border-radius: 0.75rem;
             position: relative;
@@ -17,6 +22,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        @media (min-width: 768px) {
+            .canvas-container { height: 300px; }
         }
         canvas {
             max-width: 100%;
@@ -28,150 +36,122 @@
             background-size: 15px 15px;
         }
         .usda-sample {
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             border: 2px solid transparent;
         }
         .usda-sample.selected {
             border-color: #f59e0b;
             transform: scale(1.05);
-            box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.2);
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            width: 14px;
-            height: 14px;
-            background: #f59e0b;
-            border-radius: 50%;
-            cursor: pointer;
+            background-color: #fffbeb;
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800 font-sans p-2 md:p-6">
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans p-3 md:p-6 flex flex-col">
 
-    <div id="main-container" class="max-w-[1600px] mx-auto">
-        <!-- Header con Branding Originale SARTech -->
-        <header class="mb-4 flex flex-col md:flex-row items-center justify-between bg-white p-3 rounded-2xl shadow-sm border border-slate-100 gap-4">
-            <div class="flex items-center gap-3">
-                <div class="bg-amber-500 p-2 rounded-xl shadow-md">
+    <div id="main-container" class="max-w-[1400px] mx-auto w-full flex-grow">
+        <!-- Header con Branding Compatto per Mobile -->
+        <header class="mb-4 flex flex-col sm:flex-row items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-100 gap-4">
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <div class="bg-amber-500 p-2.5 rounded-xl shadow-md">
                     <span class="text-xl">🍟</span>
                 </div>
                 <div>
-                    <h1 class="text-xl font-black text-slate-900 tracking-tighter leading-none uppercase">FRIES-SCAN <span class="text-amber-500 italic text-lg">Pro</span></h1>
-                    <p class="text-slate-400 font-bold uppercase text-[8px] tracking-[0.2em] mt-1">SISTEMA ANALISI QA IN TEMPO REALE</p>
+                    <h1 class="text-lg font-black text-slate-900 tracking-tighter leading-none uppercase">FRIES-SCAN <span class="text-amber-500 italic">Pro</span></h1>
+                    <p class="text-slate-400 font-bold uppercase text-[7px] tracking-[0.2em] mt-1">ANALISI COLORE REAL-TIME</p>
                 </div>
             </div>
 
-            <!-- Branding SARTech S.r.l. -->
-            <div class="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+            <!-- Branding PIZZOLI spa -->
+            <div class="flex items-center justify-end gap-3 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-100 w-full sm:w-auto">
                 <div class="text-right">
-                    <p class="text-slate-900 font-black text-[10px] uppercase tracking-wider leading-none">PIZZOLI</p>
-                    <p class="text-amber-600 font-bold text-[9px] lowercase italic leading-none mt-1">R&D AGRO technology</p>
-                </div>
-                <div class="w-10 h-10 bg-white rounded-lg border border-slate-200 p-1 flex items-center justify-center shadow-inner">
-                    <svg viewBox="0 0 100 100" class="w-full h-full text-amber-700">
-                        <path fill="currentColor" d="M30,50 Q30,20 50,20 Q70,20 70,50 Q70,80 50,80 Q30,80 30,50" />
-                        <rect x="42" y="35" width="16" height="10" rx="2" fill="#334155" />
-                        <circle cx="46" cy="40" r="2" fill="#38bdf8" />
-                        <circle cx="54" cy="40" r="2" fill="#38bdf8" />
-                        <path d="M45,65 L55,65" stroke="#334155" stroke-width="2" />
-                        <path d="M30,40 L20,30 M70,40 L80,30" stroke="#94a3b8" stroke-width="2" />
-                    </svg>
+                    <p class="text-black font-black text-[11px] uppercase tracking-wider leading-none">PIZZOLI spa</p>
+                    <p class="text-slate-500 font-bold text-[9px] leading-none mt-1">R&D AGRO Technology</p>
                 </div>
             </div>
         </header>
 
-        <main class="grid grid-cols-1 xl:grid-cols-12 gap-4">
-            <!-- Sidebar Sinistra: Caricamento e Controlli -->
-            <div class="xl:col-span-3 space-y-4">
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            
+            <!-- Colonna Sinistra: Caricamento e Verdetto -->
+            <div class="lg:col-span-3 flex flex-col gap-4 order-1">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                    <label class="block mb-4">
-                        <label for="imageUpload" class="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-100 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-amber-50 transition-all group">
-                            <div class="flex flex-col items-center justify-center text-slate-400">
-                                <svg class="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                <p class="text-[10px] font-black uppercase tracking-widest text-center px-2">Scatta Foto o Carica</p>
-                            </div>
-                            <!-- capture="environment" suggerisce l'uso della fotocamera posteriore su dispositivi mobili -->
-                            <input id="imageUpload" type="file" class="hidden" accept="image/*" capture="environment" />
-                        </label>
+                    <label for="imageUpload" class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-100 border-dashed rounded-xl cursor-pointer bg-slate-50 active:bg-amber-50 hover:bg-amber-50 transition-all group">
+                        <div class="flex flex-col items-center justify-center text-slate-400">
+                            <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <p class="text-[11px] font-black uppercase tracking-widest">FOTO O CARICA</p>
+                        </div>
+                        <input id="imageUpload" type="file" class="hidden" accept="image/*" capture="environment" />
                     </label>
 
-                    <div id="controls" class="hidden space-y-4">
-                        <h3 class="font-black text-[10px] uppercase tracking-widest text-slate-400 border-b pb-2">Parametri di Filtro</h3>
-                        <div class="space-y-3">
-                            <div>
-                                <div class="flex justify-between mb-1 text-[9px] font-black">
-                                    <label class="uppercase text-slate-500">Tolleranza Hue (Colore)</label>
-                                    <span id="hueVal" class="text-amber-700">35°</span>
-                                </div>
-                                <input type="range" id="hueThreshold" min="5" max="60" value="35" class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-amber-500">
-                            </div>
-                            <div>
-                                <div class="flex justify-between mb-1 text-[9px] font-black">
-                                    <label class="uppercase text-slate-500">Saturazione Minima</label>
-                                    <span id="satVal" class="text-amber-700">15%</span>
-                                </div>
-                                <input type="range" id="satThreshold" min="5" max="50" value="15" class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-amber-500">
-                            </div>
-                        </div>
-                        <button id="processBtn" class="w-full py-2 bg-slate-900 hover:bg-black text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-md">
+                    <div id="controls" class="hidden mt-4">
+                        <button id="processBtn" class="w-full py-4 bg-slate-900 active:bg-black text-white text-[11px] font-black uppercase rounded-xl transition-all shadow-md">
                             Rielabora Analisi
                         </button>
                     </div>
                 </div>
 
                 <!-- Card del Verdetto -->
-                <div id="finalGradeCard" class="hidden bg-slate-900 p-4 rounded-2xl shadow-lg text-center border-b-4 border-amber-500">
+                <div id="finalGradeCard" class="hidden bg-slate-900 p-5 rounded-2xl shadow-lg text-center border-b-4 border-amber-500">
                     <h3 class="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-2">Classificazione USDA</h3>
-                    <div id="gradeBadge" class="inline-block px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-2xl mb-2">--</div>
-                    <p id="gradeDescription" class="text-[10px] text-slate-300 leading-tight italic uppercase font-bold tracking-tight">In attesa...</p>
+                    <div id="gradeBadge" class="inline-block px-5 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black text-3xl mb-2">--</div>
+                    <p id="gradeDescription" class="text-[11px] text-slate-300 leading-tight italic uppercase font-bold tracking-tight">In attesa...</p>
                 </div>
             </div>
 
             <!-- Centro: Area Visuale -->
-            <div class="xl:col-span-6 space-y-4">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 grid grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sorgente Originale</span>
-                        <div class="canvas-container"><canvas id="sourceCanvas"></canvas></div>
-                    </div>
-                    <div class="space-y-2">
-                        <span class="text-[9px] font-black text-amber-500 uppercase tracking-widest">Mappatura Digitale</span>
-                        <div class="canvas-container pattern-dots !bg-slate-950"><canvas id="processedCanvas"></canvas></div>
+            <div class="lg:col-span-6 flex flex-col gap-4 order-2">
+                <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="space-y-1.5">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Sorgente Originale</span>
+                            <div class="canvas-container"><canvas id="sourceCanvas"></canvas></div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <span class="text-[9px] font-black text-amber-500 uppercase tracking-widest pl-1">Mappatura Digitale</span>
+                            <div class="canvas-container pattern-dots !bg-slate-950"><canvas id="processedCanvas"></canvas></div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 overflow-x-auto">
                     <h2 class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3 text-center">Standard di Riferimento USDA</h2>
-                    <div id="usdaScaleContainer" class="grid grid-cols-6 gap-2"></div>
+                    <div id="usdaScaleContainer" class="flex md:grid md:grid-cols-6 gap-2 min-w-max md:min-w-0"></div>
                 </div>
             </div>
 
             <!-- Sidebar Destra: Dettagli Analisi -->
-            <div class="xl:col-span-3 space-y-4">
-                <div id="resultsCard" class="hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-100 h-fit">
-                    <div class="flex justify-between items-center border-b pb-2 mb-4">
-                        <h3 class="font-black text-[10px] uppercase tracking-widest text-slate-400">Distribuzione (Relativa al 100%)</h3>
-                    </div>
+            <div class="lg:col-span-3 order-3">
+                <div id="resultsCard" class="hidden bg-white p-5 rounded-2xl shadow-sm border border-slate-100 h-fit">
+                    <h3 class="font-black text-[10px] uppercase tracking-widest text-slate-400 border-b pb-3 mb-4 text-center">Distribuzione %</h3>
                     
                     <div id="chartContainer" class="space-y-5"></div>
                     
                     <div class="mt-6 pt-4 border-t border-slate-50 bg-slate-50/50 p-3 rounded-xl">
                         <div class="flex justify-between items-center mb-1">
-                            <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Massa Pixel Analizzati</span>
-                            <span id="totalPixels" class="text-slate-900 font-mono text-xs font-bold bg-white px-2 py-0.5 rounded border border-slate-100 shadow-sm">0 px</span>
+                            <span class="text-[9px] font-black text-slate-500 uppercase">Pixel Analizzati</span>
+                            <span id="totalPixels" class="text-slate-900 font-mono text-[10px] font-bold bg-white px-2 py-0.5 rounded border border-slate-100">0 px</span>
                         </div>
-                        <p class="text-[8px] text-slate-400 italic leading-none mt-2">Nota: I valori dell'istogramma sono calcolati esclusivamente sui pixel filtrati.</p>
+                        <p class="text-[8px] text-slate-400 italic leading-tight mt-2 text-center">Analisi basata sulla massa pixel filtrata.</p>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Footer con Copyright -->
+    <footer class="mt-8 mb-4 text-center">
+        <p class="text-[9px] text-slate-400 font-medium uppercase tracking-[0.2em]">
+            Copyright Riccardo Sartoni
+        </p>
+    </footer>
+
     <script>
         const imageUpload = document.getElementById('imageUpload');
         const sourceCanvas = document.getElementById('sourceCanvas');
         const processedCanvas = document.getElementById('processedCanvas');
-        const hueThreshold = document.getElementById('hueThreshold');
-        const satThreshold = document.getElementById('satThreshold');
         const processBtn = document.getElementById('processBtn');
         const chartContainer = document.getElementById('chartContainer');
         const gradeBadge = document.getElementById('gradeBadge');
@@ -179,6 +159,9 @@
         const totalPixelsLabel = document.getElementById('totalPixels');
 
         let originalImage = null;
+
+        const DEFAULT_HUE_THRESHOLD = 35;
+        const DEFAULT_SAT_THRESHOLD = 15;
 
         const USDA_GRADES = [
             { id: "00", name: "00", rgb: [245, 245, 230], color: "#f5f5e6" },
@@ -217,6 +200,9 @@
                     document.getElementById('controls').classList.remove('hidden');
                     document.getElementById('resultsCard').classList.remove('hidden');
                     document.getElementById('finalGradeCard').classList.remove('hidden');
+                    if (window.innerWidth < 768) {
+                        document.getElementById('finalGradeCard').scrollIntoView({ behavior: 'smooth' });
+                    }
                 };
                 originalImage.src = event.target.result;
             };
@@ -224,7 +210,8 @@
         });
 
         function initCanvases() {
-            const scale = Math.min(1, 1200 / originalImage.width);
+            const maxDimension = window.innerWidth < 768 ? 800 : 1200;
+            const scale = Math.min(1, maxDimension / Math.max(originalImage.width, originalImage.height));
             sourceCanvas.width = originalImage.width * scale;
             sourceCanvas.height = originalImage.height * scale;
             processedCanvas.width = sourceCanvas.width;
@@ -247,7 +234,7 @@
                 const r = data[i], g = data[i+1], b = data[i+2];
                 const [h, s, v] = rgbToHsv(r, g, b);
                 
-                if (Math.abs(h - 45) < parseInt(hueThreshold.value) && s > parseInt(satThreshold.value) && v > 20) {
+                if (Math.abs(h - 45) < DEFAULT_HUE_THRESHOLD && s > DEFAULT_SAT_THRESHOLD && v > 20) {
                     pData.data[i] = r; pData.data[i+1] = g; pData.data[i+2] = b; pData.data[i+3] = 255;
                     totalFound++;
                     let minD = Infinity, best = "0";
@@ -283,7 +270,7 @@
                                 <span class="text-[8px] font-bold text-slate-400">%</span>
                             </div>
                         </div>
-                        <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden flex border border-slate-50 shadow-inner">
+                        <div class="w-full bg-slate-100 h-4 rounded-full overflow-hidden flex border border-slate-50 shadow-inner">
                             <div class="h-full transition-all duration-700 ease-out relative group" style="width:${p}%; background:${grade.color}">
                                 <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             </div>
@@ -299,18 +286,12 @@
             gradeDescription.innerText = dominant < 1 ? "Cottura Insufficiente" : (dominant < 3 ? "Qualità Ottimale" : "Cottura Eccessiva");
         }
 
-        hueThreshold.oninput = () => {
-            document.getElementById('hueVal').innerText = hueThreshold.value + '°';
-        };
-        satThreshold.oninput = () => {
-            document.getElementById('satVal').innerText = satThreshold.value + '%';
-        };
         processBtn.onclick = processImage;
 
         document.getElementById('usdaScaleContainer').innerHTML = USDA_GRADES.map(g => `
-            <div id="sample-${g.id}" class="usda-sample p-2 bg-white border border-slate-50 rounded-xl flex flex-col items-center">
-                <div class="w-full aspect-square rounded-lg mb-1 shadow-sm border border-slate-100" style="background:${g.color}"></div>
-                <span class="text-[8px] font-black text-slate-400">G${g.name}</span>
+            <div id="sample-${g.id}" class="usda-sample p-2.5 bg-white border border-slate-100 rounded-xl flex flex-col items-center min-w-[70px]">
+                <div class="w-full aspect-square rounded-lg mb-1 shadow-sm border border-slate-200" style="background:${g.color}"></div>
+                <span class="text-[9px] font-black text-slate-500 uppercase">G${g.name}</span>
             </div>
         `).join('');
     </script>
